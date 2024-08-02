@@ -12,5 +12,8 @@
     "express"
   ],
   "author": "Mayank Rajoriya",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "prettier": "^3.3.3"
+  }
 }
