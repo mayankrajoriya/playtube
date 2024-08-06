@@ -3,6 +3,7 @@ const ApiErrorHandler = require("../utils/ApiErrorHandler");
 const ApiResponse = require("../utils/ApiResponse");
 const userModel = require("../models/userModel");
 const uploadOnCloudinary = require("../utils/cloudinary");
+
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
     const user = await userModel.findById(userId);
@@ -12,7 +13,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
     await user.save({ validateBeforeSave: false });
     return { accessToken, refreshToken };
   } catch (error) {
-    throw new ApiErrorHandler(500, "something went wrong");
+    throw new ApiErrorHandler(500, "Something went wrong");
   }
 };
 
@@ -24,14 +25,14 @@ const registerUser = asyncHandler(async (req, res) => {
       field?.trim() === "";
     })
   ) {
-    throw new ApiErrorHandler(400, "All field are required");
+    throw new ApiErrorHandler(400, "All fields are required");
   }
 
   const isUserExist = await userModel.findOne({
     $or: [{ email }, { username }],
   });
   if (isUserExist) {
-    throw new ApiErrorHandler(409, "user already exists");
+    throw new ApiErrorHandler(409, "User already exists");
   }
   const avatarLocalPath = req.files?.avatar[0]?.path;
   if (!avatarLocalPath) {
@@ -65,27 +66,27 @@ const registerUser = asyncHandler(async (req, res) => {
     .select("-password -refreshToken");
 
   if (!IsUserCreated) {
-    throw new ApiErrorHandler(504, "something went wrong ");
+    throw new ApiErrorHandler(504, "Something went wrong");
   }
   return res
     .status(201)
-    .json(new ApiResponse(200, IsUserCreated, "User registered Successfully"));
+    .json(new ApiResponse(200, IsUserCreated, "User registered successfully"));
 });
 
 const loginUser = asyncHandler(async (req, res) => {
   const { username, email, password } = req.body;
   if (!(username || email)) {
-    throw new ApiErrorHandler(400, "username or email is required");
+    throw new ApiErrorHandler(400, "Username or email is required");
   }
   const isUser = await userModel.findOne({
     $or: [{ username }, { email }],
   });
   if (!isUser) {
-    throw new ApiErrorHandler(404, "user does not exists");
+    throw new ApiErrorHandler(404, "User does not exist");
   }
   const isPasswordValid = await isUser.isPasswordCorrect(password);
   if (!isPasswordValid) {
-    throw new ApiErrorHandler(401, "something went wrong");
+    throw new ApiErrorHandler(401, "Invalid password");
   }
   const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
     isUser._id
@@ -94,10 +95,11 @@ const loginUser = asyncHandler(async (req, res) => {
     .findById(isUser._id)
     .select("-password -refreshToken");
 
-  //step to make cookie secure
+  // Step to make cookie secure
   const options = {
     httpOnly: true,
     secure: true,
+    sameSite: "strict",
   };
 
   return res
@@ -110,7 +112,7 @@ const loginUser = asyncHandler(async (req, res) => {
         {
           loggedInUser,
         },
-        "user logged In successfully"
+        "User logged in successfully"
       )
     );
 });
@@ -128,7 +130,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     }
   );
 
-  //step to make cookie secure
+  // Step to make cookie secure
   const options = {
     httpOnly: true,
     secure: true,
@@ -137,7 +139,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     .status(200)
     .clearCookie("accessToken", options)
     .clearCookie("refreshToken", options)
-    .json(new ApiResponse(200, {}, " user logout successfully"));
+    .json(new ApiResponse(200, {}, "User logged out successfully"));
 });
 
 module.exports = { registerUser, loginUser, logoutUser };
